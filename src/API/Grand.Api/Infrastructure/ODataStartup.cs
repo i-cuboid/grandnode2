@@ -20,7 +20,7 @@ using Microsoft.OData.ModelBuilder;
 
 namespace Grand.Api.Infrastructure
 {
-    public partial class ODataStartup : IStartupApplication
+    public class ODataStartup : IStartupApplication
     {
         public void Configure(IApplicationBuilder application, IWebHostEnvironment webHostEnvironment)
         {
@@ -81,11 +81,11 @@ namespace Grand.Api.Infrastructure
             //create and sort instances of dependency inject
             var instances = dependencyInject
                 .Select(di => (IDependencyEdmModel)Activator.CreateInstance(di))
-                .OrderBy(di => di.Order);
+                .OrderBy(di => di!.Order);
 
             //register all provided dependencies
             foreach (var dependencyRegistrar in instances)
-                dependencyRegistrar.Register(builder, apiConfig);
+                dependencyRegistrar!.Register(builder, apiConfig);
 
         }
 

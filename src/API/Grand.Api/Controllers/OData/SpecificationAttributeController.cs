@@ -13,7 +13,7 @@ using System.Net;
 
 namespace Grand.Api.Controllers.OData
 {
-    public partial class SpecificationAttributeController : BaseODataController
+    public class SpecificationAttributeController : BaseODataController
     {
         private readonly IMediator _mediator;
         private readonly IPermissionService _permissionService;
@@ -59,7 +59,7 @@ namespace Grand.Api.Controllers.OData
         {
             if (!await _permissionService.Authorize(PermissionSystemName.SpecificationAttributes)) return Forbid();
 
-            model = await _mediator.Send(new AddSpecificationAttributeCommand() { Model = model });
+            model = await _mediator.Send(new AddSpecificationAttributeCommand { Model = model });
             return Ok(model);
         }
 
@@ -72,7 +72,7 @@ namespace Grand.Api.Controllers.OData
         {
             if (!await _permissionService.Authorize(PermissionSystemName.SpecificationAttributes)) return Forbid();
 
-            model = await _mediator.Send(new UpdateSpecificationAttributeCommand() { Model = model });
+            model = await _mediator.Send(new UpdateSpecificationAttributeCommand { Model = model });
             return Ok(model);
         }
 
@@ -91,7 +91,7 @@ namespace Grand.Api.Controllers.OData
 
             var spec = specification.FirstOrDefault();
             model.ApplyTo(spec);
-            await _mediator.Send(new UpdateSpecificationAttributeCommand() { Model = spec });
+            await _mediator.Send(new UpdateSpecificationAttributeCommand { Model = spec });
             return Ok();
         }
 
@@ -107,7 +107,7 @@ namespace Grand.Api.Controllers.OData
             var specification = await _mediator.Send(new GetGenericQuery<SpecificationAttributeDto, Domain.Catalog.SpecificationAttribute>(key));
             if (!specification.Any()) return NotFound();
 
-            await _mediator.Send(new DeleteSpecificationAttributeCommand() { Model = specification.FirstOrDefault() });
+            await _mediator.Send(new DeleteSpecificationAttributeCommand { Model = specification.FirstOrDefault() });
 
             return Ok();
         }

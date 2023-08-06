@@ -1,8 +1,9 @@
-﻿using Grand.Business.Core.Interfaces.Catalog.Products;
+﻿using Grand.Api.Commands.Models.Catalog;
+using Grand.Business.Core.Interfaces.Catalog.Products;
 using Grand.Domain.Catalog;
 using MediatR;
 
-namespace Grand.Api.Commands.Models.Catalog
+namespace Grand.Api.Commands.Handlers.Catalog
 {
     public class AddProductSpecificationCommandHandler : IRequestHandler<AddProductSpecificationCommand, bool>
     {
@@ -31,7 +32,7 @@ namespace Grand.Api.Commands.Models.Catalog
                 CustomValue = request.Model.CustomValue,
                 AllowFiltering = request.Model.AllowFiltering,
                 ShowOnProductPage = request.Model.ShowOnProductPage,
-                DisplayOrder = request.Model.DisplayOrder,
+                DisplayOrder = request.Model.DisplayOrder
             };
             await _specificationAttributeService.InsertProductSpecificationAttribute(psa, request.Product.Id);
 

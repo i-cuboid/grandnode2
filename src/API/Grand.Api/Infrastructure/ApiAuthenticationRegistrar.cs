@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Grand.Api.Infrastructure
 {
-    public partial class ApiAuthenticationRegistrar : IAuthenticationBuilder
+    public class ApiAuthenticationRegistrar : IAuthenticationBuilder
     {
         public void AddAuthentication(AuthenticationBuilder builder, IConfiguration configuration)
         {
@@ -61,7 +61,7 @@ namespace Grand.Api.Infrastructure
                         {
                             throw new Exception(ex.Message);
                         }
-                    },
+                    }
                 };
             });
 
@@ -112,7 +112,7 @@ namespace Grand.Api.Infrastructure
                         {
                             throw new Exception(ex.Message);
                         }
-                    },
+                    }
                 };
             });
 

@@ -4,7 +4,6 @@ using Grand.Domain.Data;
 using Grand.Domain.Seo;
 using Grand.Infrastructure.Caching;
 using Grand.Infrastructure.Caching.Constants;
-using Grand.Infrastructure.Configuration;
 
 namespace Grand.Business.Common.Services.Seo
 {
@@ -17,7 +16,6 @@ namespace Grand.Business.Common.Services.Seo
 
         private readonly IRepository<EntityUrl> _urlEntityRepository;
         private readonly ICacheBase _cacheBase;
-        private readonly PerformanceConfig _config;
 
         #endregion
 
@@ -27,28 +25,14 @@ namespace Grand.Business.Common.Services.Seo
         /// Ctor
         /// </summary>
         public SlugService(ICacheBase cacheBase,
-            IRepository<EntityUrl> urlEntityRepository,
-            PerformanceConfig config)
+            IRepository<EntityUrl> urlEntityRepository)
         {
             _cacheBase = cacheBase;
             _urlEntityRepository = urlEntityRepository;
-            _config = config;
         }
 
         #endregion
-
-
-        /// <summary>
-        /// Gets all cached URL Entity
-        /// </summary>
-        /// <returns>cached URL Entities</returns>
-        protected virtual async Task<IList<EntityUrl>> GetAllUrlEntityCached()
-        {
-            //cache
-            var key = string.Format(CacheKey.URLEntity_ALL_KEY);
-            return await _cacheBase.GetAsync(key, async () => await Task.FromResult(_urlEntityRepository.Table.ToList()));
-        }
-
+        
         #region Methods
 
         /// <summary>
@@ -90,6 +74,7 @@ namespace Grand.Business.Common.Services.Seo
             //cache
             await _cacheBase.RemoveByPrefix(CacheKey.URLEntity_PATTERN_KEY);
         }
+
         /// <summary>
         /// Deletes an URL Entity
         /// </summary>
@@ -119,9 +104,9 @@ namespace Grand.Business.Common.Services.Seo
             slug = slug.ToLowerInvariant();
 
             var query = from ur in _urlEntityRepository.Table
-                        where ur.Slug == slug
-                        orderby ur.IsActive
-                        select ur;
+                where ur.Slug == slug
+                orderby ur.IsActive
+                select ur;
             return await Task.FromResult(query.FirstOrDefault());
         }
 
@@ -136,17 +121,6 @@ namespace Grand.Business.Common.Services.Seo
                 return null;
 
             slug = slug.ToLowerInvariant();
-
-            if (_config.LoadAllUrlEntitiesOnStartup)
-            {
-                var source = await GetAllUrlEntityCached();
-                var query = from ur in source
-                            where ur.Slug != null && ur.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase)
-                            orderby ur.IsActive
-                            select ur;
-                var entityUrlForCaching = query.FirstOrDefault();
-                return entityUrlForCaching;
-            }
 
             var key = string.Format(CacheKey.URLEntity_BY_SLUG_KEY, slug);
             return await _cacheBase.GetAsync(key, async () =>
@@ -164,11 +138,11 @@ namespace Grand.Business.Common.Services.Seo
         /// <param name="pageIndex">Page index</param>
         /// <param name="pageSize">Page size</param>
         /// <returns>URL Entity</returns>
-        public virtual async Task<IPagedList<EntityUrl>> GetAllEntityUrl(string slug = "", bool? active = null, int pageIndex = 0, int pageSize = int.MaxValue)
+        public virtual async Task<IPagedList<EntityUrl>> GetAllEntityUrl(string slug = "", bool? active = null,
+            int pageIndex = 0, int pageSize = int.MaxValue)
         {
-
             var query = from p in _urlEntityRepository.Table
-                        select p;
+                select p;
 
             if (!string.IsNullOrWhiteSpace(slug))
                 query = query.Where(ur => ur.Slug.Contains(slug.ToLowerInvariant()));
@@ -189,39 +163,20 @@ namespace Grand.Business.Common.Services.Seo
         /// <returns>Found slug</returns>
         public virtual async Task<string> GetActiveSlug(string entityId, string entityName, string languageId)
         {
-            if (_config.LoadAllUrlEntitiesOnStartup)
+            var key = string.Format(CacheKey.URLEntity_ACTIVE_BY_ID_NAME_LANGUAGE_KEY, entityId, entityName,
+                languageId);
+            return await _cacheBase.GetAsync(key, async () =>
             {
-                var key = string.Format(CacheKey.URLEntity_ACTIVE_BY_ID_NAME_LANGUAGE_KEY, entityId, entityName, languageId);
-                return await _cacheBase.GetAsync(key, async () =>
-                {
-                    var source = await GetAllUrlEntityCached();
-                    var query = from ur in source
-                                where ur.EntityId == entityId &&
-                                ur.EntityName == entityName &&
-                                ur.LanguageId == languageId &&
-                                ur.IsActive
-                                select ur.Slug;
-                    var slug = query.FirstOrDefault() ?? "";
-                    return slug;
-                });
-            }
-            else
-            {
-                var key = string.Format(CacheKey.URLEntity_ACTIVE_BY_ID_NAME_LANGUAGE_KEY, entityId, entityName, languageId);
-                return await _cacheBase.GetAsync(key, async () =>
-                {
-
-                    var source = _urlEntityRepository.Table;
-                    var query = from ur in source
-                                where ur.EntityId == entityId &&
-                                ur.EntityName == entityName &&
-                                ur.LanguageId == languageId &&
-                                ur.IsActive
-                                select ur.Slug;
-                    var slug = await Task.FromResult(query.FirstOrDefault()) ?? "";
-                    return slug;
-                });
-            }
+                var source = _urlEntityRepository.Table;
+                var query = from ur in source
+                    where ur.EntityId == entityId &&
+                          ur.EntityName == entityName &&
+                          ur.LanguageId == languageId &&
+                          ur.IsActive
+                    select ur.Slug;
+                var slug = await Task.FromResult(query.FirstOrDefault()) ?? "";
+                return slug;
+            });
         }
 
         /// <summary>
@@ -231,7 +186,8 @@ namespace Grand.Business.Common.Services.Seo
         /// <param name="entity">Entity</param>
         /// <param name="slug">Slug</param>
         /// <param name="languageId">Language ID</param>
-        public virtual async Task SaveSlug<T>(T entity, string slug, string languageId) where T : BaseEntity, ISlugEntity
+        public virtual async Task SaveSlug<T>(T entity, string slug, string languageId)
+            where T : BaseEntity, ISlugEntity
         {
             if (entity == null)
                 throw new ArgumentNullException(nameof(entity));
@@ -240,10 +196,10 @@ namespace Grand.Business.Common.Services.Seo
             var entityName = typeof(T).Name;
 
             var query = from ur in _urlEntityRepository.Table
-                        where ur.EntityId == entityId &&
-                        ur.EntityName == entityName &&
-                        ur.LanguageId == languageId
-                        select ur;
+                where ur.EntityId == entityId &&
+                      ur.EntityName == entityName &&
+                      ur.LanguageId == languageId
+                select ur;
 
             var allUrlEntity = query.ToList();
             var activeUrlEntity = allUrlEntity.FirstOrDefault(x => x.IsActive);
@@ -265,8 +221,7 @@ namespace Grand.Business.Common.Services.Seo
                 else
                 {
                     //new record
-                    var entityUrl = new EntityUrl
-                    {
+                    var entityUrl = new EntityUrl {
                         EntityId = entityId,
                         EntityName = entityName,
                         Slug = slug,
@@ -301,8 +256,7 @@ namespace Grand.Business.Common.Services.Seo
                     else
                     {
                         //insert new record
-                        var entityUrl = new EntityUrl
-                        {
+                        var entityUrl = new EntityUrl {
                             EntityId = entityId,
                             EntityName = entityName,
                             Slug = slug,
@@ -314,7 +268,6 @@ namespace Grand.Business.Common.Services.Seo
                         activeUrlEntity.IsActive = false;
                         await UpdateEntityUrl(activeUrlEntity);
                     }
-
                 }
             }
         }

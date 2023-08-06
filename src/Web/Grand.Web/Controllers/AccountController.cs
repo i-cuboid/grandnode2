@@ -751,7 +751,7 @@ namespace Grand.Web.Controllers
                 Address = address,
                 ExcludeProperties = false,
                 Customer = _workContext.CurrentCustomer,
-                LoadCountries = () => countries,
+                LoadCountries = () => countries
             });
 
             return View(model);
@@ -1207,9 +1207,7 @@ namespace Grand.Web.Controllers
                     success = true
                 });
             }
-
             //errors
-            ModelState.AddModelError("", result.error);
             return Json(new
             {
                 redirect = Url.RouteUrl("CustomerSubAccounts"),

@@ -9,7 +9,7 @@ using System.Net;
 
 namespace Grand.Api.Controllers.OData
 {
-    public partial class CategoryLayoutController : BaseODataController
+    public class CategoryLayoutController : BaseODataController
     {
         private readonly IMediator _mediator;
         private readonly IPermissionService _permissionService;
@@ -31,7 +31,7 @@ namespace Grand.Api.Controllers.OData
         {
             if (!await _permissionService.Authorize(PermissionSystemName.Maintenance)) return Forbid();
 
-            var layout = await _mediator.Send(new GetLayoutQuery() { Id = key, LayoutName = typeof(Domain.Catalog.CategoryLayout).Name });
+            var layout = await _mediator.Send(new GetLayoutQuery { Id = key, LayoutName = typeof(Domain.Catalog.CategoryLayout).Name });
             if (!layout.Any()) return NotFound();
 
             return Ok(layout.FirstOrDefault());
@@ -46,7 +46,7 @@ namespace Grand.Api.Controllers.OData
         {
             if (!await _permissionService.Authorize(PermissionSystemName.Maintenance)) return Forbid();
 
-            return Ok(await _mediator.Send(new GetLayoutQuery() { LayoutName = typeof(Domain.Catalog.CategoryLayout).Name }));
+            return Ok(await _mediator.Send(new GetLayoutQuery { LayoutName = typeof(Domain.Catalog.CategoryLayout).Name }));
         }
     }
 }
